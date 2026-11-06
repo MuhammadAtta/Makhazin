@@ -62,4 +62,248 @@ h1 span{display:block}
 .reading{background:rgba(255,255,255,.07);border-radius:12px;padding:12px}
 .reading small{display:block;font-size:.7rem;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
 .reading strong{font:500 1.35rem var(--mono)}
-.reading em{
+.reading em{font-style:normal;font-size:.75rem;opacity:.7;margin-left:2px}
+#spark{width:100%;height:64px;display:block}
+.sensor-foot{display:flex;justify-content:space-between;margin-top:12px;font-size:.78rem;opacity:.8}
+.badge-ok{color:var(--teal-300);font-weight:600}
+
+/* sections */
+section{padding:88px 0}
+.kicker{font:600 .78rem var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--teal-700);margin-bottom:10px}
+@media (prefers-color-scheme:dark){.kicker{color:var(--teal-300)}}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.8rem,3.6vw,2.6rem);line-height:1.15;letter-spacing:-.015em;max-width:20em;margin-bottom:14px}
+.sub{color:var(--ink-2);max-width:40em;font-size:1.05rem;margin-bottom:44px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px}
+.card h3{font-family:var(--serif);font-weight:600;font-size:1.3rem;margin-bottom:8px}
+.card p{color:var(--ink-2);font-size:.98rem}
+.ico{width:44px;height:44px;border-radius:12px;background:var(--teal-100);display:grid;place-items:center;margin-bottom:18px;color:var(--teal-700)}
+.ico svg{width:22px;height:22px}
+.step-n{font:500 .85rem var(--mono);color:var(--teal-700);margin-bottom:10px}
+.who ul{list-style:none;margin-top:16px;display:grid;gap:10px}
+.who li{display:flex;gap:10px;color:var(--ink-2);font-size:.97rem}
+.who li::before{content:"✓";color:var(--teal-500);font-weight:700}
+.alt{background:color-mix(in srgb,var(--teal-100) 55%,var(--bg))}
+
+/* waitlist */
+#waitlist{background:var(--grad);color:#fff}
+#waitlist .kicker{color:#fff;opacity:.85}
+#waitlist h2{color:#fff}
+.wl{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
+.wl p.sub{color:rgba(255,255,255,.92);margin-bottom:0}
+form{background:var(--card);color:var(--ink);border-radius:var(--radius);padding:28px;box-shadow:0 30px 60px -30px rgba(0,0,0,.45)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{text-align:center;padding:12px;border:1.5px solid var(--line);border-radius:12px;font-weight:600;font-size:.95rem;cursor:pointer;transition:.15s}
+.seg input:checked+label{border-color:var(--teal-700);background:var(--teal-100);color:var(--teal-900)}
+@media (prefers-color-scheme:dark){.seg input:checked+label{color:var(--teal-300)}}
+.seg input:focus-visible+label{outline:3px solid var(--teal-500);outline-offset:2px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
+.field input{width:100%;font:inherit;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.field input:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal-500) 25%,transparent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hp{position:absolute;left:-9999px;height:0;overflow:hidden}
+form .btn{width:100%;background:var(--teal-700);color:#fff;font-size:1rem;padding:14px}
+form .btn[disabled]{opacity:.6;cursor:wait}
+#msg{margin-top:14px;font-size:.92rem;min-height:1.4em}
+#msg.ok{color:var(--ok)} #msg.err{color:var(--danger)}
+.fine{margin-top:10px;font-size:.78rem;color:var(--muted)}
+
+footer{padding:36px 0;color:var(--muted);font-size:.88rem;border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+
+@media (max-width:860px){
+  .hero{padding:56px 0 64px}
+  .hero .wrap,.wl,.grid3,.grid2{grid-template-columns:1fr}
+  section{padding:60px 0}
+  .readings{gap:8px}.reading strong{font-size:1.1rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#top">Makhazin</a>
+    <a class="btn btn-primary btn-sm" href="#waitlist">Join the waitlist</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Warehouse marketplace · Egypt &amp; MENA</span>
+      <h1><span>Unlock Space.</span><span>Unleash Growth.</span><span>Rent Securely.</span></h1>
+      <p class="lead">Find verified warehouses, sign digital contracts in minutes, and watch temperature, humidity and access live from your phone. One platform for owners and tenants.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#waitlist" data-role="owner">I own a warehouse</a>
+        <a class="btn btn-ghost" href="#waitlist" data-role="tenant">I need storage space</a>
+      </div>
+    </div>
+
+    <aside class="sensor" aria-label="Live sensor example">
+      <div class="sensor-head">
+        <div><b>Warehouse B-12</b> · 10th of Ramadan City</div>
+        <span class="live"><i></i>LIVE</span>
+      </div>
+      <div class="readings">
+        <div class="reading"><small>Temp</small><strong id="t">24.0</strong><em>°C</em></div>
+        <div class="reading"><small>Humidity</small><strong id="h">48</strong><em>%</em></div>
+        <div class="reading"><small>Door</small><strong id="d">Closed</strong></div>
+      </div>
+      <svg id="spark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd6cf" stop-opacity=".45"/><stop offset="1" stop-color="#5fd6cf" stop-opacity="0"/></linearGradient></defs>
+        <path id="area" fill="url(#g)"/><path id="line" fill="none" stroke="#5fd6cf" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="sensor-foot"><span>Last 60 seconds · simulated data</span><span class="badge-ok" id="status">All within range</span></div>
+    </aside>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="kicker">How it works</div>
+    <h2>From search to signed contract, without the runaround</h2>
+    <p class="sub">Renting a warehouse today means phone calls, middlemen and paper. Makhazin puts it in one place.</p>
+    <div class="grid3">
+      <div class="card"><div class="step-n">01</div><h3>Discover</h3><p>Browse verified warehouses by city, size, clear height and features like cold storage or loading docks.</p></div>
+      <div class="card"><div class="step-n">02</div><h3>Book &amp; sign</h3><p>Request a viewing, agree terms and sign a digital contract. Every version is stored with a tamper-evident audit trail.</p></div>
+      <div class="card"><div class="step-n">03</div><h3>Monitor</h3><p>IoT sensors report temperature, humidity and door access in real time, with alerts when something drifts out of range.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="who">
+  <div class="wrap">
+    <div class="kicker">Built for both sides</div>
+    <h2>Fill empty space. Find the right space.</h2>
+    <p class="sub">Owners earn from idle capacity. Tenants get flexible space they can trust.</p>
+    <div class="grid2 who">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-8h6v8"/></svg></div>
+        <h3>Warehouse owners</h3>
+        <ul>
+          <li>List space and reach verified tenants</li>
+          <li>Digital contracts and rent tracking in one dashboard</li>
+          <li>Sensor data that proves conditions to tenants</li>
+          <li>Fewer vacancies, fewer disputes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg></div>
+        <h3>Businesses &amp; tenants</h3>
+        <ul>
+          <li>Compare options by price, size and features</li>
+          <li>Short and long terms that scale with your stock</li>
+          <li>Live visibility into your goods from anywhere</li>
+          <li>Clear contracts, no hidden terms</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="kicker">What you get</div>
+    <h2>The essentials, done properly</h2>
+    <div style="height:32px"></div>
+    <div class="grid3">
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Verified listings</h3><p>Every warehouse is checked before it goes live.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div><h3>Digital contracts</h3><p>Sign online. Each contract is hashed and logged so any change is visible.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><circle cx="12" cy="17" r="5"/></svg></div><h3>Live monitoring</h3><p>Temperature, humidity and access, with instant alerts.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="waitlist">
+  <div class="wrap wl">
+    <div>
+      <div class="kicker">Early access</div>
+      <h2>Be first in line when we launch</h2>
+      <p class="sub">We're onboarding our first warehouses and tenants now. Join the waitlist and we'll reach out personally.</p>
+    </div>
+    <form id="form" novalidate>
+      <div class="seg" role="radiogroup" aria-label="I am a">
+        <input type="radio" name="role" id="r-owner" value="owner" checked><label for="r-owner">Warehouse owner</label>
+        <input type="radio" name="role" id="r-tenant" value="tenant"><label for="r-tenant">Tenant</label>
+      </div>
+      <div class="field"><label for="email">Email *</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="you@company.com"></div>
+      <div class="two">
+        <div class="field"><label for="name">Name</label><input id="name" name="name" autocomplete="name"></div>
+        <div class="field"><label for="phone">WhatsApp / phone</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
+      </div>
+      <div class="field"><label for="city">City</label><input id="city" name="city" placeholder="Cairo, 10th of Ramadan, Alexandria…"></div>
+      <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+      <button class="btn" type="submit" id="submit">Join the waitlist</button>
+      <div id="msg" role="status" aria-live="polite"></div>
+      <p class="fine">No spam. We only use your details to contact you about Makhazin.</p>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap"><span>© <span id="y"></span> Makhazin</span><span>Unlock Space. Unleash Growth. Rent Securely.</span></div>
+</footer>
+
+<script>
+// year
+document.getElementById("y").textContent = new Date().getFullYear();
+
+// CTA buttons preselect the role
+document.querySelectorAll("[data-role]").forEach(a => a.addEventListener("click", () => {
+  const r = document.getElementById("r-" + a.dataset.role); if (r) r.checked = true;
+}));
+
+// Simulated live sensor
+(function () {
+  const N = 40, temps = [];
+  let t = 24.0, h = 48;
+  const $ = id => document.getElementById(id);
+  const line = $("line"), area = $("area");
+  for (let i = 0; i < N; i++) { t = Math.min(26.4, Math.max(22.6, t + (Math.random() - 0.5) * 0.7)); temps.push(t); }
+  function draw() {
+    const lo = 22, hi = 27, step = 300 / (N - 1);
+    const pts = temps.map((v, i) => [i * step, 60 - ((v - lo) / (hi - lo)) * 56]);
+    const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+    line.setAttribute("d", d);
+    area.setAttribute("d", d + " L300 64 L0 64 Z");
+  }
+  function tick() {
+    t = Math.min(26.4, Math.max(22.6, t + (Math.random() - 0.5) * 0.5));
+    h = Math.min(58, Math.max(40, h + (Math.random() - 0.5) * 1.6));
+    temps.push(t); temps.shift();
+    $("t").textContent = t.toFixed(1);
+    $("h").textContent = Math.round(h);
+    draw();
+  }
+  draw();
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(tick, 1500);
+  else tick();
+})();
+
+// Waitlist form
+(function () {
+  const form = document.getElementById("form"), msg = document.getElementById("msg"), btn = document.getElementById("submit");
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  function say(text, cls) { msg.textContent = text; msg.className = cls || ""; }
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form));
+    if (!EMAIL_RE.test((data.email || "").trim())) { say("Please enter a valid email address.", "err"); return; }
+    btn.disabled = true; say("Sending…");
+    try {
+      const res = await fetch("/api/waitlist", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok && out.ok) { form.reset(); say("You're on the list. We'll be in touch soon.", "ok"); }
+      else say(out.error === "invalid_email" ? "That email doesn't look right." : "Something went wrong. Please try again.", "err");
+    } catch { say("Network error. Please try again.", "err"); }
+    finally { btn.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>
