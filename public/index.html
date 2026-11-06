@@ -1,70 +1,65 @@
-// Makhazin landing page Worker
-// - Static files are served from ./public via the ASSETS binding
-// - POST /api/waitlist saves signups into the D1 database (binding: DB)
-
-const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
-
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Makhazin — Unlock Space. Unleash Growth. Rent Securely.</title>
+<meta name="description" content="Makhazin is the warehouse marketplace for Egypt and the MENA region, with live IoT monitoring and secure digital contracts. Join the waitlist.">
+<meta property="og:title" content="Makhazin — Rent warehouse space securely">
+<meta property="og:description" content="Warehouse marketplace + live IoT monitoring for Egypt and MENA. Join the waitlist.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b2a2e; --ink-2:#37575b; --muted:#6b8588;
+  --bg:#f5fafa; --card:#ffffff; --line:#d8e7e8;
+  --teal-900:#06454d; --teal-700:#0a7480; --teal-500:#12a4a8; --teal-300:#5fd6cf; --teal-100:#d9f5f2;
+  --amber:#f2b441; --danger:#c0392b; --ok:#13795b;
+  --grad:linear-gradient(135deg,#0a7480 0%,#12a4a8 55%,#5fd6cf 100%);
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --radius:18px;
 }
+@media (prefers-color-scheme:dark){
+  :root{--ink:#e8f5f5;--ink-2:#a9c4c6;--muted:#7f9b9e;--bg:#071d20;--card:#0c2a2e;--line:#16424a;--teal-100:#0f3a3f}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 
-const clean = (v, max) => String(v ?? "").trim().slice(0, max);
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:var(--serif);font-weight:600;font-size:1.55rem;letter-spacing:-.01em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 .95rem var(--sans);padding:12px 22px;border-radius:999px;border:1.5px solid transparent;cursor:pointer;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--teal-700);color:#fff;box-shadow:0 6px 20px -8px var(--teal-700)}
+.btn-ghost{border-color:var(--line);color:var(--ink);background:transparent}
+.btn-sm{padding:9px 18px;font-size:.88rem}
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+/* hero */
+.hero{position:relative;overflow:hidden;background:var(--grad);color:#fff;padding:84px 0 96px}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 60% at 85% 10%,rgba(255,255,255,.22),transparent 60%);pointer-events:none}
+.hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+.eyebrow{display:inline-block;font:600 .78rem var(--sans);letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.18);padding:6px 14px;border-radius:999px;margin-bottom:20px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2.4rem,5.4vw,4rem);line-height:1.06;letter-spacing:-.02em;margin-bottom:20px}
+h1 span{display:block}
+.hero p.lead{font-size:1.15rem;max-width:34em;opacity:.95;margin-bottom:32px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.hero .btn-primary{background:#fff;color:var(--teal-900);box-shadow:0 10px 30px -10px rgba(0,0,0,.35)}
+.hero .btn-ghost{border-color:rgba(255,255,255,.6);color:#fff}
 
-    if (url.pathname === "/api/waitlist") {
-      if (request.method !== "POST") {
-        return json({ error: "Method not allowed" }, 405);
-      }
-
-      let data;
-      try {
-        data = await request.json();
-      } catch {
-        return json({ error: "Invalid request." }, 400);
-      }
-
-      // Honeypot: bots fill the hidden field, humans don't. Pretend success.
-      if (clean(data.website, 200)) return json({ ok: true });
-
-      const role = data.role === "owner" ? "owner" : "tenant";
-      const name = clean(data.name, 120);
-      const email = clean(data.email, 200).toLowerCase();
-      const phone = clean(data.phone, 30).replace(/[^\d+]/g, "");
-      const city = clean(data.city, 60);
-      const sizeNum = parseInt(data.size, 10);
-      const size = Number.isFinite(sizeNum) && sizeNum > 0 && sizeNum < 10000000 ? sizeNum : null;
-
-      if (!name) return json({ error: "Please enter your name." }, 400);
-      if (!email && !phone) {
-        return json({ error: "Please add an email or a WhatsApp number." }, 400);
-      }
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return json({ error: "That email doesn't look right." }, 400);
-      }
-      if (phone && phone.replace(/\D/g, "").length < 8) {
-        return json({ error: "That phone number looks too short." }, 400);
-      }
-
-      try {
-        await env.DB.prepare(
-          `INSERT INTO waitlist (role, name, email, phone, city, size_m2)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6)`
-        )
-          .bind(role, name, email || null, phone || null, city || null, size)
-          .run();
-      } catch (err) {
-        // Unique email/phone: treat a repeat signup as success
-        if (String(err).includes("UNIQUE")) return json({ ok: true });
-        console.error("waitlist insert failed", err);
-        return json({ error: "Something went wrong. Please try again." }, 500);
-      }
-
-      return json({ ok: true });
-    }
-
-    return env.ASSETS.fetch(request);
-  },
-};
+/* sensor card */
+.sensor{background:rgba(6,40,46,.82);border:1px solid rgba(255,255,255,.18);border-radius:var(--radius);padding:22px;box-shadow:0 30px 60px -30px rgba(0,0,0,.5)}
+.sensor-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:.85rem}
+.sensor-head b{font-weight:600}
+.live{display:inline-flex;align-items:center;gap:8px;font:600 .72rem var(--sans);letter-spacing:.1em;color:var(--teal-300)}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--teal-300);animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(95,214,207,.6)}100%{box-shadow:0 0 0 10px rgba(95,214,207,0)}}
+.readings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.reading{background:rgba(255,255,255,.07);border-radius:12px;padding:12px}
+.reading small{display:block;font-size:.7rem;opacity:.7;text-transform:uppercase;letter-spacing:.08em}
+.reading strong{font:500 1.35rem var(--mono)}
+.reading em{
