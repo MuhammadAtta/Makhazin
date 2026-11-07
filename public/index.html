@@ -33,11 +33,13 @@ a{color:inherit}
 nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
 .logo{font-family:var(--serif);font-weight:600;font-size:1.55rem;letter-spacing:-.01em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;text-decoration:none}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 .95rem var(--sans);padding:12px 22px;border-radius:999px;border:1.5px solid transparent;cursor:pointer;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 .95rem var(--sans);padding:12px 22px;border-radius:999px;border:1.5px solid transparent;cursor:pointer;text-decoration:none;transition:transform .15s,box-shadow .15s}
 .btn:hover{transform:translateY(-1px)}
 .btn-primary{background:var(--teal-700);color:#fff;box-shadow:0 6px 20px -8px var(--teal-700)}
 .btn-ghost{border-color:var(--line);color:var(--ink);background:transparent}
 .btn-sm{padding:9px 18px;font-size:.88rem}
+.navlinks{display:flex;align-items:center;gap:14px}
+.navlinks a.plain{font-weight:600;font-size:.9rem;text-decoration:none;color:var(--ink-2)}
 
 /* hero */
 .hero{position:relative;overflow:hidden;background:var(--grad);color:#fff;padding:84px 0 96px}
@@ -128,7 +130,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 <nav>
   <div class="wrap">
     <a class="logo" href="#top">Makhazin</a>
-    <a class="btn btn-primary btn-sm" href="#waitlist">Join the waitlist</a>
+    <div class="navlinks"><a class="plain" href="/warehouses">Warehouses</a><a class="btn btn-primary btn-sm" href="#waitlist">Join waitlist</a></div>
   </div>
 </nav>
 

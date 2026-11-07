@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warehouses — Makhazin</title>
+<meta name="description" content="Browse verified warehouses for rent in Egypt. Filter by city, size and price, and request a viewing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="logo" href="/">Makhazin</a>
+    <div class="navlinks"><a class="btn btn-sm" href="/#waitlist">Join waitlist</a></div>
+  </div>
+</nav>
+
+<main class="wrap page" id="app" aria-live="polite"></main>
+
+<footer><div class="wrap">© <span id="y"></span> Makhazin · Unlock Space. Unleash Growth. Rent Securely.</div></footer>
+
+<script>
+document.getElementById("y").textContent = new Date().getFullYear();
+const app = document.getElementById("app");
+const $ = (t, props = {}, ...kids) => {
+  const e = document.createElement(t);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => c != null && e.append(c));
+  return e;
+};
+const egp = n => n == null ? "Ask for price" : new Intl.NumberFormat("en-US").format(n) + " EGP / month";
+const feats = s => (s || "").split(",").map(x => x.trim()).filter(Boolean);
+const api = async (url, opts) => { const r = await fetch(url, opts); return r.json().catch(() => ({ ok: false })); };
+
+function thumb(w) {
+  if (w.image_url) { const i = $("img", { class: "thumb", src: w.image_url, alt: w.name, loading: "lazy", referrerpolicy: "no-referrer" }); i.onerror = () => i.replaceWith($("div", { class: "thumb ph", text: "No photo" })); return i; }
+  return $("div", { class: "thumb ph", text: "No photo yet" });
+}
+
+/* ---------- list ---------- */
+async function showList() {
+  document.title = "Warehouses — Makhazin";
+  app.replaceChildren($("h1", { text: "Warehouses for rent" }),
+    $("p", { class: "lead", text: "Verified warehouse space across Egypt. Filter, compare, and request a viewing." }));
+
+  const city = $("select", { id: "f-city" }, $("option", { value: "", text: "All cities" }));
+  const minSize = $("input", { id: "f-min", type: "number", inputmode: "numeric", placeholder: "Min size (m²)" });
+  const maxPrice = $("input", { id: "f-max", type: "number", inputmode: "numeric", placeholder: "Max price (EGP)" });
+  const filters = $("div", { class: "filters" },
+    $("div", {}, $("label", { class: "f", for: "f-city", text: "City" }), city),
+    $("div", {}, $("label", { class: "f", for: "f-min", text: "Min size" }), minSize),
+    $("div", {}, $("label", { class: "f", for: "f-max", text: "Max price" }), maxPrice));
+  const grid = $("div", { class: "grid" });
+  app.append(filters, grid);
+
+  let knownCities = false;
+  async function load() {
+    const q = new URLSearchParams();
+    if (city.value) q.set("city", city.value);
+    if (minSize.value) q.set("min_size", minSize.value);
+    if (maxPrice.value) q.set("max_price", maxPrice.value);
+    grid.replaceChildren($("p", { class: "empty", text: "Loading…" }));
+    const out = await api("/api/warehouses?" + q);
+    if (!out.ok) { grid.replaceChildren($("p", { class: "empty", text: "Could not load warehouses. Please try again." })); return; }
+    if (!knownCities) {
+      knownCities = true;
+      [...new Set(out.warehouses.map(w => w.city))].sort().forEach(c => city.append($("option", { value: c, text: c })));
+    }
+    if (!out.warehouses.length) { grid.replaceChildren($("p", { class: "empty", text: "No warehouses match these filters yet." })); return; }
+    grid.replaceChildren(...out.warehouses.map(w =>
+      $("a", { class: "card wcard", href: "/warehouses?id=" + w.id },
+        thumb(w),
+        $("div", { class: "pad" },
+          $("h3", { text: w.name }),
+          $("div", { class: "meta", text: [w.area, w.city].filter(Boolean).join(", ") + (w.size_sqm ? " · " + w.size_sqm + " m²" : "") }),
+          $("div", { class: "price", text: egp(w.price_egp_month) }),
+          $("div", { class: "chips" },
+            w.status === "rented" ? $("span", { class: "chip rented", text: "Currently rented" }) : null,
+            feats(w.features).slice(0, 3).map(f => $("span", { class: "chip", text: f })))))));
+  }
+  [city, minSize, maxPrice].forEach(el => el.addEventListener("change", load));
+  load();
+}
+
+/* ---------- detail ---------- */
+async function showDetail(id) {
+  app.replaceChildren($("p", { class: "empty", text: "Loading…" }));
+  const out = await api("/api/warehouses/" + encodeURIComponent(id));
+  if (!out.ok) {
+    app.replaceChildren($("a", { class: "back", href: "/warehouses", text: "← All warehouses" }),
+      $("p", { class: "empty", text: "This warehouse is not available." }));
+    return;
+  }
+  const w = out.warehouse;
+  document.title = w.name + " — Makhazin";
+
+  const fact = (k, v) => $("div", { class: "fact" }, $("small", { text: k }), $("b", { text: v }));
+  const info = $("div", { class: "card" }, thumb(w), $("div", { class: "pad" },
+    $("h1", { text: w.name }),
+    $("div", { class: "meta", text: [w.area, w.city].filter(Boolean).join(", ") }),
+    $("div", { class: "facts" },
+      fact("Size", w.size_sqm ? w.size_sqm + " m²" : "—"),
+      fact("Price", w.price_egp_month != null ? new Intl.NumberFormat("en-US").format(w.price_egp_month) + " EGP / month" : "Ask"),
+      fact("Clear height", w.clear_height_m ? w.clear_height_m + " m" : "—"),
+      fact("Status", w.status === "available" ? "Available" : "Currently rented")),
+    $("div", { class: "chips" }, feats(w.features).map(f => $("span", { class: "chip", text: f }))),
+    w.description ? $("p", { class: "lead", style: "margin-top:16px;white-space:pre-line", text: w.description }) : null));
+
+  const name = $("input", { id: "i-name", autocomplete: "name", required: "" });
+  const phone = $("input", { id: "i-phone", type: "tel", autocomplete: "tel", placeholder: "WhatsApp / phone", required: "" });
+  const email = $("input", { id: "i-email", type: "email", autocomplete: "email" });
+  const note = $("textarea", { id: "i-msg", placeholder: "Space needed, start date, what you will store…" });
+  const hp = $("div", { class: "hp", "aria-hidden": "true" }, $("input", { name: "website", tabindex: "-1", autocomplete: "off" }));
+  const msg = $("div", { class: "msg", role: "status" });
+  const btn = $("button", { class: "btn", type: "submit", text: "Request a viewing" });
+  const form = $("form", { class: "card pad", novalidate: "" },
+    $("h2", { text: "Request a viewing" }),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-name", text: "Name *" }), name),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-phone", text: "WhatsApp / phone *" }), phone),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-email", text: "Email (optional)" }), email),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-msg", text: "Message (optional)" }), note),
+    hp, btn, msg);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!name.value.trim() || phone.value.replace(/\D/g, "").length < 7) { msg.className = "msg err"; msg.textContent = "Please enter your name and a valid phone number."; return; }
+    btn.disabled = true; msg.className = "msg"; msg.textContent = "Sending…";
+    const res = await api("/api/inquiries", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ warehouse_id: w.id, name: name.value, phone: phone.value, email: email.value, message: note.value, website: hp.firstChild.value }) });
+    btn.disabled = false;
+    if (res.ok) { form.reset(); msg.className = "msg ok"; msg.textContent = "Request sent. We will contact you shortly."; }
+    else { msg.className = "msg err"; msg.textContent = "Could not send. Please check your details and try again."; }
+  });
+
+  app.replaceChildren($("a", { class: "back", href: "/warehouses", text: "← All warehouses" }), $("div", { class: "detail" }, info, form));
+}
+
+const id = new URLSearchParams(location.search).get("id");
+id ? showDetail(id) : showList();
+</script>
+</body>
+</html>
