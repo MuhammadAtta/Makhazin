@@ -1,0 +1,18 @@
+/* Arabic / RTL support, shared by the public pages */
+html[lang="ar"]{--serif:"Cairo",system-ui,sans-serif;--sans:"Cairo",system-ui,sans-serif}
+/* letter-spacing and uppercase break Arabic letter joining */
+html[lang="ar"] *{letter-spacing:0!important;text-transform:none!important}
+html[lang="ar"] body{line-height:1.85}
+html[lang="ar"] h1{line-height:1.3}
+html[lang="ar"] h2,html[lang="ar"] .card h3{line-height:1.4}
+html[lang="ar"] .logo{font-weight:700}
+
+.langbtn{background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:6px 14px;font:600 .85rem var(--sans);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.langbtn:hover{border-color:var(--teal-500)}
+
+/* emails, phones and numbers are typed left-to-right but should sit on the reading edge */
+input[type="email"],input[type="tel"],input[type="number"]{direction:ltr}
+html[dir="rtl"] input[type="email"],html[dir="rtl"] input[type="tel"],html[dir="rtl"] input[type="number"]{text-align:right}
+svg{direction:ltr}
+.reading em{margin-left:0;margin-inline-start:2px}
+html[dir="rtl"] .hero::after{background:radial-gradient(60% 60% at 15% 10%,rgba(255,255,255,.22),transparent 60%)}

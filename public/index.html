@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,7 +9,7 @@
 <meta property="og:description" content="Warehouse marketplace + live IoT monitoring for Egypt and MENA. Join the waitlist.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
   --ink:#0b2a2e; --ink-2:#37575b; --muted:#6b8588;
@@ -124,84 +124,86 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 </style>
+<link rel="stylesheet" href="/rtl.css">
+<script src="/i18n.js"></script>
 </head>
-<body>
+<body data-title-key="title.home" data-meta-key="meta.home">
 
 <nav>
   <div class="wrap">
-    <a class="logo" href="#top">Makhazin</a>
-    <div class="navlinks"><a class="plain" href="/warehouses">Warehouses</a><a class="btn btn-primary btn-sm" href="#waitlist">Join waitlist</a></div>
+    <a class="logo" href="#top" data-i18n="brand">Makhazin</a>
+    <div class="navlinks"><a class="plain" href="/warehouses" data-i18n="nav.warehouses">Warehouses</a><button class="langbtn" id="lang-btn" type="button" data-i18n="lang.other">عربي</button><a class="btn btn-primary btn-sm" href="#waitlist" data-i18n="nav.join">Join waitlist</a></div>
   </div>
 </nav>
 
 <header class="hero" id="top">
   <div class="wrap">
     <div>
-      <span class="eyebrow">Warehouse marketplace · Egypt &amp; MENA</span>
-      <h1><span>Unlock Space.</span><span>Unleash Growth.</span><span>Rent Securely.</span></h1>
-      <p class="lead">Find verified warehouses, sign digital contracts in minutes, and watch temperature, humidity and access live from your phone. One platform for owners and tenants.</p>
+      <span class="eyebrow" data-i18n="hero.eyebrow">Warehouse marketplace · Egypt &amp; MENA</span>
+      <h1><span data-i18n="h1.1">Unlock Space.</span><span data-i18n="h1.2">Unleash Growth.</span><span data-i18n="h1.3">Rent Securely.</span></h1>
+      <p class="lead" data-i18n="hero.lead">Find verified warehouses, sign digital contracts in minutes, and watch temperature, humidity and access live from your phone. One platform for owners and tenants.</p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="#waitlist" data-role="owner">I own a warehouse</a>
-        <a class="btn btn-ghost" href="#waitlist" data-role="tenant">I need storage space</a>
+        <a class="btn btn-primary" href="#waitlist" data-role="owner" data-i18n="hero.owner">I own a warehouse</a>
+        <a class="btn btn-ghost" href="#waitlist" data-role="tenant" data-i18n="hero.tenant">I need storage space</a>
       </div>
     </div>
 
-    <aside class="sensor" aria-label="Live sensor example">
+    <aside class="sensor" data-i18n-aria="sensor.aria" aria-label="Live sensor example">
       <div class="sensor-head">
-        <div><b>Warehouse B-12</b> · 10th of Ramadan City</div>
-        <span class="live"><i></i>LIVE</span>
+        <div data-i18n="sensor.title">Warehouse B-12 · 10th of Ramadan City</div>
+        <span class="live"><i></i><span data-i18n="sensor.live">LIVE</span></span>
       </div>
       <div class="readings">
-        <div class="reading"><small>Temp</small><strong id="t">24.0</strong><em>°C</em></div>
-        <div class="reading"><small>Humidity</small><strong id="h">48</strong><em>%</em></div>
-        <div class="reading"><small>Door</small><strong id="d">Closed</strong></div>
+        <div class="reading"><small data-i18n="sensor.temp">Temp</small><strong id="t">24.0</strong><em>°C</em></div>
+        <div class="reading"><small data-i18n="sensor.humidity">Humidity</small><strong id="h">48</strong><em>%</em></div>
+        <div class="reading"><small data-i18n="sensor.door">Door</small><strong id="d" data-i18n="sensor.closed">Closed</strong></div>
       </div>
       <svg id="spark" viewBox="0 0 300 64" preserveAspectRatio="none" aria-hidden="true">
         <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd6cf" stop-opacity=".45"/><stop offset="1" stop-color="#5fd6cf" stop-opacity="0"/></linearGradient></defs>
         <path id="area" fill="url(#g)"/><path id="line" fill="none" stroke="#5fd6cf" stroke-width="2" stroke-linejoin="round"/>
       </svg>
-      <div class="sensor-foot"><span>Last 60 seconds · simulated data</span><span class="badge-ok" id="status">All within range</span></div>
+      <div class="sensor-foot"><span data-i18n="sensor.foot">Last 60 seconds · simulated data</span><span class="badge-ok" id="status" data-i18n="sensor.status">All within range</span></div>
     </aside>
   </div>
 </header>
 
 <section id="how">
   <div class="wrap">
-    <div class="kicker">How it works</div>
-    <h2>From search to signed contract, without the runaround</h2>
-    <p class="sub">Renting a warehouse today means phone calls, middlemen and paper. Makhazin puts it in one place.</p>
+    <div class="kicker" data-i18n="how.kicker">How it works</div>
+    <h2 data-i18n="how.h2">From search to signed contract, without the runaround</h2>
+    <p class="sub" data-i18n="how.sub">Renting a warehouse today means phone calls, middlemen and paper. Makhazin puts it in one place.</p>
     <div class="grid3">
-      <div class="card"><div class="step-n">01</div><h3>Discover</h3><p>Browse verified warehouses by city, size, clear height and features like cold storage or loading docks.</p></div>
-      <div class="card"><div class="step-n">02</div><h3>Book &amp; sign</h3><p>Request a viewing, agree terms and sign a digital contract. Every version is stored with a tamper-evident audit trail.</p></div>
-      <div class="card"><div class="step-n">03</div><h3>Monitor</h3><p>IoT sensors report temperature, humidity and door access in real time, with alerts when something drifts out of range.</p></div>
+      <div class="card"><div class="step-n">01</div><h3 data-i18n="step1.h">Discover</h3><p data-i18n="step1.p">Browse verified warehouses by city, size, clear height and features like cold storage or loading docks.</p></div>
+      <div class="card"><div class="step-n">02</div><h3 data-i18n="step2.h">Book &amp; sign</h3><p data-i18n="step2.p">Request a viewing, agree terms and sign a digital contract. Every version is stored with a tamper-evident audit trail.</p></div>
+      <div class="card"><div class="step-n">03</div><h3 data-i18n="step3.h">Monitor</h3><p data-i18n="step3.p">IoT sensors report temperature, humidity and door access in real time, with alerts when something drifts out of range.</p></div>
     </div>
   </div>
 </section>
 
 <section class="alt" id="who">
   <div class="wrap">
-    <div class="kicker">Built for both sides</div>
-    <h2>Fill empty space. Find the right space.</h2>
-    <p class="sub">Owners earn from idle capacity. Tenants get flexible space they can trust.</p>
+    <div class="kicker" data-i18n="who.kicker">Built for both sides</div>
+    <h2 data-i18n="who.h2">Fill empty space. Find the right space.</h2>
+    <p class="sub" data-i18n="who.sub">Owners earn from idle capacity. Tenants get flexible space they can trust.</p>
     <div class="grid2 who">
       <div class="card">
         <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-8h6v8"/></svg></div>
-        <h3>Warehouse owners</h3>
+        <h3 data-i18n="owners.h">Warehouse owners</h3>
         <ul>
-          <li>List space and reach verified tenants</li>
-          <li>Digital contracts and rent tracking in one dashboard</li>
-          <li>Sensor data that proves conditions to tenants</li>
-          <li>Fewer vacancies, fewer disputes</li>
+          <li data-i18n="owners.1">List space and reach verified tenants</li>
+          <li data-i18n="owners.2">Digital contracts and rent tracking in one dashboard</li>
+          <li data-i18n="owners.3">Sensor data that proves conditions to tenants</li>
+          <li data-i18n="owners.4">Fewer vacancies, fewer disputes</li>
         </ul>
       </div>
       <div class="card">
         <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg></div>
-        <h3>Businesses &amp; tenants</h3>
+        <h3 data-i18n="tenants.h">Businesses &amp; tenants</h3>
         <ul>
-          <li>Compare options by price, size and features</li>
-          <li>Short and long terms that scale with your stock</li>
-          <li>Live visibility into your goods from anywhere</li>
-          <li>Clear contracts, no hidden terms</li>
+          <li data-i18n="tenants.1">Compare options by price, size and features</li>
+          <li data-i18n="tenants.2">Short and long terms that scale with your stock</li>
+          <li data-i18n="tenants.3">Live visibility into your goods from anywhere</li>
+          <li data-i18n="tenants.4">Clear contracts, no hidden terms</li>
         </ul>
       </div>
     </div>
@@ -210,13 +212,13 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 
 <section id="features">
   <div class="wrap">
-    <div class="kicker">What you get</div>
-    <h2>The essentials, done properly</h2>
+    <div class="kicker" data-i18n="feat.kicker">What you get</div>
+    <h2 data-i18n="feat.h2">The essentials, done properly</h2>
     <div style="height:32px"></div>
     <div class="grid3">
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Verified listings</h3><p>Every warehouse is checked before it goes live.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div><h3>Digital contracts</h3><p>Sign online. Each contract is hashed and logged so any change is visible.</p></div>
-      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><circle cx="12" cy="17" r="5"/></svg></div><h3>Live monitoring</h3><p>Temperature, humidity and access, with instant alerts.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div><h3 data-i18n="feat1.h">Verified listings</h3><p data-i18n="feat1.p">Every warehouse is checked before it goes live.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg></div><h3 data-i18n="feat2.h">Digital contracts</h3><p data-i18n="feat2.p">Sign online. Each contract is hashed and logged so any change is visible.</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><circle cx="12" cy="17" r="5"/></svg></div><h3 data-i18n="feat3.h">Live monitoring</h3><p data-i18n="feat3.p">Temperature, humidity and access, with instant alerts.</p></div>
     </div>
   </div>
 </section>
@@ -224,37 +226,34 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
 <section id="waitlist">
   <div class="wrap wl">
     <div>
-      <div class="kicker">Early access</div>
-      <h2>Be first in line when we launch</h2>
-      <p class="sub">We're onboarding our first warehouses and tenants now. Join the waitlist and we'll reach out personally.</p>
+      <div class="kicker" data-i18n="wl.kicker">Early access</div>
+      <h2 data-i18n="wl.h2">Be first in line when we launch</h2>
+      <p class="sub" data-i18n="wl.sub">We're onboarding our first warehouses and tenants now. Join the waitlist and we'll reach out personally.</p>
     </div>
     <form id="form" novalidate>
-      <div class="seg" role="radiogroup" aria-label="I am a">
-        <input type="radio" name="role" id="r-owner" value="owner" checked><label for="r-owner">Warehouse owner</label>
-        <input type="radio" name="role" id="r-tenant" value="tenant"><label for="r-tenant">Tenant</label>
+      <div class="seg" role="radiogroup" data-i18n-aria="wl.roleAria" aria-label="I am a">
+        <input type="radio" name="role" id="r-owner" value="owner" checked><label for="r-owner" data-i18n="wl.owner">Warehouse owner</label>
+        <input type="radio" name="role" id="r-tenant" value="tenant"><label for="r-tenant" data-i18n="wl.tenant">Tenant</label>
       </div>
-      <div class="field"><label for="email">Email *</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="you@company.com"></div>
+      <div class="field"><label for="email" data-i18n="wl.email">Email *</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="you@company.com"></div>
       <div class="two">
-        <div class="field"><label for="name">Name</label><input id="name" name="name" autocomplete="name"></div>
-        <div class="field"><label for="phone">WhatsApp / phone</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
+        <div class="field"><label for="name" data-i18n="wl.name">Name</label><input id="name" name="name" autocomplete="name"></div>
+        <div class="field"><label for="phone" data-i18n="wl.phone">WhatsApp / phone</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
       </div>
-      <div class="field"><label for="city">City</label><input id="city" name="city" placeholder="Cairo, 10th of Ramadan, Alexandria…"></div>
+      <div class="field"><label for="city" data-i18n="wl.city">City</label><input id="city" name="city" data-i18n-ph="wl.cityPh" placeholder="Cairo, 10th of Ramadan, Alexandria…"></div>
       <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
-      <button class="btn" type="submit" id="submit">Join the waitlist</button>
+      <button class="btn" type="submit" id="submit" data-i18n="wl.submit">Join the waitlist</button>
       <div id="msg" role="status" aria-live="polite"></div>
-      <p class="fine">No spam. We only use your details to contact you about Makhazin.</p>
+      <p class="fine" data-i18n="wl.fine">No spam. We only use your details to contact you about Makhazin.</p>
     </form>
   </div>
 </section>
 
 <footer>
-  <div class="wrap"><span>© <span id="y"></span> Makhazin</span><span>Unlock Space. Unleash Growth. Rent Securely.</span></div>
+  <div class="wrap"><span data-i18n="footer.copy">© 2026 Makhazin</span><span data-i18n="footer.slogan">Unlock Space. Unleash Growth. Rent Securely.</span></div>
 </footer>
 
 <script>
-// year
-document.getElementById("y").textContent = new Date().getFullYear();
-
 // CTA buttons preselect the role
 document.querySelectorAll("[data-role]").forEach(a => a.addEventListener("click", () => {
   const r = document.getElementById("r-" + a.dataset.role); if (r) r.checked = true;
@@ -295,14 +294,14 @@ document.querySelectorAll("[data-role]").forEach(a => a.addEventListener("click"
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    if (!EMAIL_RE.test((data.email || "").trim())) { say("Please enter a valid email address.", "err"); return; }
-    btn.disabled = true; say("Sending…");
+    if (!EMAIL_RE.test((data.email || "").trim())) { say(i18n.t("wl.badEmail"), "err"); return; }
+    btn.disabled = true; say(i18n.t("wl.sending"));
     try {
       const res = await fetch("/api/waitlist", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
       const out = await res.json().catch(() => ({}));
-      if (res.ok && out.ok) { form.reset(); say("You're on the list. We'll be in touch soon.", "ok"); }
-      else say(out.error === "invalid_email" ? "That email doesn't look right." : "Something went wrong. Please try again.", "err");
-    } catch { say("Network error. Please try again.", "err"); }
+      if (res.ok && out.ok) { form.reset(); say(i18n.t("wl.ok"), "ok"); }
+      else say(i18n.t(out.error === "invalid_email" ? "wl.invalid" : "wl.error"), "err");
+    } catch { say(i18n.t("wl.network"), "err"); }
     finally { btn.disabled = false; }
   });
 })();

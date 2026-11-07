@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,23 +7,26 @@
 <meta name="description" content="Browse verified warehouses for rent in Egypt. Filter by city, size and price, and request a viewing.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/rtl.css">
+<script src="/i18n.js"></script>
 </head>
-<body>
+<body data-title-key="title.list" data-meta-key="meta.list">
 <nav>
   <div class="wrap">
-    <a class="logo" href="/">Makhazin</a>
-    <div class="navlinks"><a class="btn btn-sm" href="/#waitlist">Join waitlist</a></div>
+    <a class="logo" href="/" data-i18n="brand">Makhazin</a>
+    <div class="navlinks"><button class="langbtn" id="lang-btn" type="button" data-i18n="lang.other">عربي</button><a class="btn btn-sm" href="/#waitlist" data-i18n="nav.join">Join waitlist</a></div>
   </div>
 </nav>
 
 <main class="wrap page" id="app" aria-live="polite"></main>
 
-<footer><div class="wrap">© <span id="y"></span> Makhazin · Unlock Space. Unleash Growth. Rent Securely.</div></footer>
+<footer><div class="wrap"><span data-i18n="footer.copy">© 2026 Makhazin</span> · <span data-i18n="footer.slogan">Unlock Space. Unleash Growth. Rent Securely.</span></div></footer>
 
 <script>
-document.getElementById("y").textContent = new Date().getFullYear();
+const t = (k, v) => i18n.t(k, v);
+const nf = n => new Intl.NumberFormat("en-US").format(n);
 const app = document.getElementById("app");
 const $ = (t, props = {}, ...kids) => {
   const e = document.createElement(t);
@@ -34,28 +37,28 @@ const $ = (t, props = {}, ...kids) => {
   kids.flat().forEach(c => c != null && e.append(c));
   return e;
 };
-const egp = n => n == null ? "Ask for price" : new Intl.NumberFormat("en-US").format(n) + " EGP / month";
+const egp = n => n == null ? t("price.ask") : t("price.fmt", { n: nf(n) });
 const feats = s => (s || "").split(",").map(x => x.trim()).filter(Boolean);
 const api = async (url, opts) => { const r = await fetch(url, opts); return r.json().catch(() => ({ ok: false })); };
 
 function thumb(w) {
-  if (w.image_url) { const i = $("img", { class: "thumb", src: w.image_url, alt: w.name, loading: "lazy", referrerpolicy: "no-referrer" }); i.onerror = () => i.replaceWith($("div", { class: "thumb ph", text: "No photo" })); return i; }
-  return $("div", { class: "thumb ph", text: "No photo yet" });
+  if (w.image_url) { const i = $("img", { class: "thumb", src: w.image_url, alt: w.name, loading: "lazy", referrerpolicy: "no-referrer" }); i.onerror = () => i.replaceWith($("div", { class: "thumb ph", text: t("photo.none") })); return i; }
+  return $("div", { class: "thumb ph", text: t("photo.yet") });
 }
 
 /* ---------- list ---------- */
 async function showList() {
-  document.title = "Warehouses — Makhazin";
-  app.replaceChildren($("h1", { text: "Warehouses for rent" }),
-    $("p", { class: "lead", text: "Verified warehouse space across Egypt. Filter, compare, and request a viewing." }));
+  document.title = t("title.list");
+  app.replaceChildren($("h1", { text: t("list.h1") }),
+    $("p", { class: "lead", text: t("list.lead") }));
 
-  const city = $("select", { id: "f-city" }, $("option", { value: "", text: "All cities" }));
-  const minSize = $("input", { id: "f-min", type: "number", inputmode: "numeric", placeholder: "Min size (m²)" });
-  const maxPrice = $("input", { id: "f-max", type: "number", inputmode: "numeric", placeholder: "Max price (EGP)" });
+  const city = $("select", { id: "f-city" }, $("option", { value: "", text: t("f.all") }));
+  const minSize = $("input", { id: "f-min", type: "number", inputmode: "numeric", placeholder: t("f.minPh") });
+  const maxPrice = $("input", { id: "f-max", type: "number", inputmode: "numeric", placeholder: t("f.maxPh") });
   const filters = $("div", { class: "filters" },
-    $("div", {}, $("label", { class: "f", for: "f-city", text: "City" }), city),
-    $("div", {}, $("label", { class: "f", for: "f-min", text: "Min size" }), minSize),
-    $("div", {}, $("label", { class: "f", for: "f-max", text: "Max price" }), maxPrice));
+    $("div", {}, $("label", { class: "f", for: "f-city", text: t("f.city") }), city),
+    $("div", {}, $("label", { class: "f", for: "f-min", text: t("f.min") }), minSize),
+    $("div", {}, $("label", { class: "f", for: "f-max", text: t("f.max") }), maxPrice));
   const grid = $("div", { class: "grid" });
   app.append(filters, grid);
 
@@ -65,23 +68,23 @@ async function showList() {
     if (city.value) q.set("city", city.value);
     if (minSize.value) q.set("min_size", minSize.value);
     if (maxPrice.value) q.set("max_price", maxPrice.value);
-    grid.replaceChildren($("p", { class: "empty", text: "Loading…" }));
+    grid.replaceChildren($("p", { class: "empty", text: t("loading") }));
     const out = await api("/api/warehouses?" + q);
-    if (!out.ok) { grid.replaceChildren($("p", { class: "empty", text: "Could not load warehouses. Please try again." })); return; }
+    if (!out.ok) { grid.replaceChildren($("p", { class: "empty", text: t("list.fail") })); return; }
     if (!knownCities) {
       knownCities = true;
       [...new Set(out.warehouses.map(w => w.city))].sort().forEach(c => city.append($("option", { value: c, text: c })));
     }
-    if (!out.warehouses.length) { grid.replaceChildren($("p", { class: "empty", text: "No warehouses match these filters yet." })); return; }
+    if (!out.warehouses.length) { grid.replaceChildren($("p", { class: "empty", text: t("list.empty") })); return; }
     grid.replaceChildren(...out.warehouses.map(w =>
       $("a", { class: "card wcard", href: "/warehouses?id=" + w.id },
         thumb(w),
         $("div", { class: "pad" },
           $("h3", { text: w.name }),
-          $("div", { class: "meta", text: [w.area, w.city].filter(Boolean).join(", ") + (w.size_sqm ? " · " + w.size_sqm + " m²" : "") }),
+          $("div", { class: "meta", text: [w.area, w.city].filter(Boolean).join(", ") + (w.size_sqm ? " · " + t("unit.sqm", { n: nf(w.size_sqm) }) : "") }),
           $("div", { class: "price", text: egp(w.price_egp_month) }),
           $("div", { class: "chips" },
-            w.status === "rented" ? $("span", { class: "chip rented", text: "Currently rented" }) : null,
+            w.status === "rented" ? $("span", { class: "chip rented", text: t("status.rented") }) : null,
             feats(w.features).slice(0, 3).map(f => $("span", { class: "chip", text: f })))))));
   }
   [city, minSize, maxPrice].forEach(el => el.addEventListener("change", load));
@@ -96,14 +99,14 @@ function spark(series) {
   const pts = vals.map((v, i) => (i * 300 / (vals.length - 1)).toFixed(1) + "," + (56 - (v - lo) / (hi - lo) * 52).toFixed(1)).join(" ");
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 300 60"); svg.setAttribute("preserveAspectRatio", "none");
-  svg.setAttribute("style", "width:100%;height:60px;display:block"); svg.setAttribute("aria-label", "Temperature, last 24 hours");
+  svg.setAttribute("style", "width:100%;height:60px;display:block"); svg.setAttribute("aria-label", t("live.chart"));
   const line = document.createElementNS(NS, "polyline");
   line.setAttribute("points", pts); line.setAttribute("fill", "none"); line.setAttribute("stroke", "#12a4a8");
   line.setAttribute("stroke-width", "2"); line.setAttribute("stroke-linejoin", "round");
   svg.append(line);
-  return $("div", {}, svg, $("div", { class: "small", text: "Temperature, last 24 hours (" + Math.min(...vals).toFixed(1) + "–" + Math.max(...vals).toFixed(1) + " °C)" }));
+  return $("div", {}, svg, $("div", { class: "small", text: t("live.chart") + " (\u2066" + Math.min(...vals).toFixed(1) + "–" + Math.max(...vals).toFixed(1) + " °C\u2069)" }));
 }
-const ago = s => s < 90 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 172800 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
+const ago = s => s < 90 ? t("ago.now") : s < 3600 ? t("ago.min", { n: nf(Math.round(s / 60)) }) : s < 172800 ? t("ago.h", { n: nf(Math.round(s / 3600)) }) : t("ago.d", { n: nf(Math.round(s / 86400)) });
 const factBox = (k, v) => $("div", { class: "fact" }, $("small", { text: k }), $("b", { text: v }));
 
 function liveCard(id) {
@@ -111,14 +114,14 @@ function liveCard(id) {
   api("/api/warehouses/" + id + "/readings").then(out => {
     if (!out.ok || !out.latest) return;
     const l = out.latest;
-    box.append($("h2", { text: "Live conditions" }),
+    box.append($("h2", { text: t("live.h") }),
       $("div", { class: "facts" },
-        factBox("Temperature", l.temp_c.toFixed(1) + " °C"),
-        factBox("Humidity", Math.round(l.humidity) + " %"),
-        l.door_open == null ? null : factBox("Door", l.door_open ? "Open" : "Closed"),
-        factBox("Sensor", l.online ? "Online" : "Offline")),
+        factBox(t("live.temp"), "\u2066" + l.temp_c.toFixed(1) + " °C\u2069"),
+        factBox(t("live.hum"), "\u2066" + Math.round(l.humidity) + " %\u2069"),
+        l.door_open == null ? null : factBox(t("live.door"), t(l.door_open ? "live.open" : "live.closed")),
+        factBox(t("live.sensor"), t(l.online ? "live.online" : "live.offline"))),
       spark(out.series),
-      $("div", { class: "small", style: "margin-top:8px", text: "Last reading " + ago(l.age_s) }));
+      $("div", { class: "small", style: "margin-top:8px", text: t("live.last", { x: ago(l.age_s) }) }));
     box.hidden = false;
   });
   return box;
@@ -126,58 +129,60 @@ function liveCard(id) {
 
 /* ---------- detail ---------- */
 async function showDetail(id) {
-  app.replaceChildren($("p", { class: "empty", text: "Loading…" }));
+  app.replaceChildren($("p", { class: "empty", text: t("loading") }));
   const out = await api("/api/warehouses/" + encodeURIComponent(id));
   if (!out.ok) {
-    app.replaceChildren($("a", { class: "back", href: "/warehouses", text: "← All warehouses" }),
-      $("p", { class: "empty", text: "This warehouse is not available." }));
+    app.replaceChildren($("a", { class: "back", href: "/warehouses", text: t("back") }),
+      $("p", { class: "empty", text: t("detail.na") }));
     return;
   }
   const w = out.warehouse;
-  document.title = w.name + " — Makhazin";
+  document.title = w.name + " — " + t("brand");
 
   const fact = (k, v) => $("div", { class: "fact" }, $("small", { text: k }), $("b", { text: v }));
   const info = $("div", { class: "card" }, thumb(w), $("div", { class: "pad" },
     $("h1", { text: w.name }),
     $("div", { class: "meta", text: [w.area, w.city].filter(Boolean).join(", ") }),
     $("div", { class: "facts" },
-      fact("Size", w.size_sqm ? w.size_sqm + " m²" : "—"),
-      fact("Price", w.price_egp_month != null ? new Intl.NumberFormat("en-US").format(w.price_egp_month) + " EGP / month" : "Ask"),
-      fact("Clear height", w.clear_height_m ? w.clear_height_m + " m" : "—"),
-      fact("Status", w.status === "available" ? "Available" : "Currently rented")),
+      fact(t("fact.size"), w.size_sqm ? t("unit.sqm", { n: nf(w.size_sqm) }) : "—"),
+      fact(t("fact.price"), w.price_egp_month != null ? egp(w.price_egp_month) : t("price.ask2")),
+      fact(t("fact.height"), w.clear_height_m ? t("unit.m", { n: nf(w.clear_height_m) }) : "—"),
+      fact(t("fact.status"), t(w.status === "available" ? "status.available" : "status.rented"))),
     $("div", { class: "chips" }, feats(w.features).map(f => $("span", { class: "chip", text: f }))),
     w.description ? $("p", { class: "lead", style: "margin-top:16px;white-space:pre-line", text: w.description }) : null));
 
   const name = $("input", { id: "i-name", autocomplete: "name", required: "" });
-  const phone = $("input", { id: "i-phone", type: "tel", autocomplete: "tel", placeholder: "WhatsApp / phone", required: "" });
+  const phone = $("input", { id: "i-phone", type: "tel", autocomplete: "tel", placeholder: t("inq.phonePh"), required: "" });
   const email = $("input", { id: "i-email", type: "email", autocomplete: "email" });
-  const note = $("textarea", { id: "i-msg", placeholder: "Space needed, start date, what you will store…" });
+  const note = $("textarea", { id: "i-msg", placeholder: t("inq.msgPh") });
   const hp = $("div", { class: "hp", "aria-hidden": "true" }, $("input", { name: "website", tabindex: "-1", autocomplete: "off" }));
   const msg = $("div", { class: "msg", role: "status" });
-  const btn = $("button", { class: "btn", type: "submit", text: "Request a viewing" });
+  const btn = $("button", { class: "btn", type: "submit", text: t("inq.h") });
   const form = $("form", { class: "card pad", novalidate: "" },
-    $("h2", { text: "Request a viewing" }),
-    $("div", { class: "field" }, $("label", { class: "f", for: "i-name", text: "Name *" }), name),
-    $("div", { class: "field" }, $("label", { class: "f", for: "i-phone", text: "WhatsApp / phone *" }), phone),
-    $("div", { class: "field" }, $("label", { class: "f", for: "i-email", text: "Email (optional)" }), email),
-    $("div", { class: "field" }, $("label", { class: "f", for: "i-msg", text: "Message (optional)" }), note),
+    $("h2", { text: t("inq.h") }),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-name", text: t("inq.name") }), name),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-phone", text: t("inq.phone") }), phone),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-email", text: t("inq.email") }), email),
+    $("div", { class: "field" }, $("label", { class: "f", for: "i-msg", text: t("inq.msg") }), note),
     hp, btn, msg);
   form.addEventListener("submit", async e => {
     e.preventDefault();
-    if (!name.value.trim() || phone.value.replace(/\D/g, "").length < 7) { msg.className = "msg err"; msg.textContent = "Please enter your name and a valid phone number."; return; }
-    btn.disabled = true; msg.className = "msg"; msg.textContent = "Sending…";
+    if (!name.value.trim() || phone.value.replace(/\D/g, "").length < 7) { msg.className = "msg err"; msg.textContent = t("inq.invalid"); return; }
+    btn.disabled = true; msg.className = "msg"; msg.textContent = t("wl.sending");
     const res = await api("/api/inquiries", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ warehouse_id: w.id, name: name.value, phone: phone.value, email: email.value, message: note.value, website: hp.firstChild.value }) });
     btn.disabled = false;
-    if (res.ok) { form.reset(); msg.className = "msg ok"; msg.textContent = "Request sent. We will contact you shortly."; }
-    else { msg.className = "msg err"; msg.textContent = "Could not send. Please check your details and try again."; }
+    if (res.ok) { form.reset(); msg.className = "msg ok"; msg.textContent = t("inq.ok"); }
+    else { msg.className = "msg err"; msg.textContent = t("inq.fail"); }
   });
 
-  app.replaceChildren($("a", { class: "back", href: "/warehouses", text: "← All warehouses" }), $("div", { class: "detail" }, $("div", {}, info, liveCard(w.id)), form));
+  app.replaceChildren($("a", { class: "back", href: "/warehouses", text: t("back") }), $("div", { class: "detail" }, $("div", {}, info, liveCard(w.id)), form));
 }
 
 const id = new URLSearchParams(location.search).get("id");
-id ? showDetail(id) : showList();
+const route = () => id ? showDetail(id) : showList();
+route();
+i18n.onChange(route);
 </script>
 </body>
 </html>
