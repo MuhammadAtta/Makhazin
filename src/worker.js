@@ -58,8 +58,26 @@ async function checkAdmin(request, env) {
   return diff === 0 ? "ok" : "denied";
 }
 
+/* ---------- notifications (email via Resend; free plan sends to the account owner only) ---------- */
+function waDigits(phone) {
+  let d = String(phone).replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "20" + d.slice(1); // Egyptian local format 01xxxxxxxxx -> 201xxxxxxxxx
+  return d;
+}
+function notify(env, ctx, subject, text) {
+  if (!env.RESEND_API_KEY || !env.NOTIFY_EMAIL) return; // not configured: skip silently
+  const task = fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ from: "Makhazin <onboarding@resend.dev>", to: [env.NOTIFY_EMAIL], subject, text }),
+  }).then(async (r) => { if (!r.ok) console.error("notify failed", r.status, (await r.text()).slice(0, 200)); })
+    .catch((e) => console.error("notify error", e));
+  ctx?.waitUntil ? ctx.waitUntil(task) : task;
+}
+
 /* ---------- waitlist ---------- */
-async function waitlist(request, env) {
+async function waitlist(request, env, ctx) {
   if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
   let d;
   try { d = await request.json(); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
@@ -75,6 +93,11 @@ async function waitlist(request, env) {
        phone = COALESCE(NULLIF(excluded.phone,''), waitlist.phone),
        city = COALESCE(NULLIF(excluded.city,''), waitlist.city)`
   ).bind(email, role, clean(d.name, 100), clean(d.phone, 30), clean(d.city, 80)).run();
+  const ph = clean(d.phone, 30);
+  notify(env, ctx, "New waitlist signup (" + role + ")",
+    ["New waitlist signup", "", "Role: " + role, "Email: " + email, "Name: " + (clean(d.name, 100) || "-"),
+     "Phone: " + (ph || "-"), "City: " + (clean(d.city, 80) || "-"),
+     ph ? "WhatsApp: https://wa.me/" + waDigits(ph) : ""].filter((l, i, a) => l !== "" || i < 2).join("\n"));
   return json({ ok: true });
 }
 
@@ -103,7 +126,7 @@ async function getWarehouse(id, env) {
   return row ? json({ ok: true, warehouse: row }) : json({ ok: false, error: "not_found" }, 404);
 }
 
-async function createInquiry(request, env) {
+async function createInquiry(request, env, ctx) {
   if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
   let d;
   try { d = await request.json(); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
@@ -113,10 +136,14 @@ async function createInquiry(request, env) {
   if (!name) return json({ ok: false, error: "name_required" }, 400);
   if (phone.replace(/\D/g, "").length < 7) return json({ ok: false, error: "invalid_phone" }, 400);
   if (email && !EMAIL_RE.test(email)) return json({ ok: false, error: "invalid_email" }, 400);
-  const exists = Number.isInteger(wid) && (await env.DB.prepare("SELECT 1 AS x FROM warehouses WHERE id = ? AND status != 'hidden'").bind(wid).first());
-  if (!exists) return json({ ok: false, error: "not_found" }, 404);
+  const wh = Number.isInteger(wid) && (await env.DB.prepare("SELECT name FROM warehouses WHERE id = ? AND status != 'hidden'").bind(wid).first());
+  if (!wh) return json({ ok: false, error: "not_found" }, 404);
+  const note = clean(d.message, 1000);
   await env.DB.prepare("INSERT INTO inquiries (warehouse_id, name, phone, email, message) VALUES (?1,?2,?3,?4,?5)")
-    .bind(wid, name, phone, email, clean(d.message, 1000)).run();
+    .bind(wid, name, phone, email, note).run();
+  notify(env, ctx, "New viewing request: " + wh.name,
+    ["New viewing request", "", "Warehouse: " + wh.name, "Name: " + name, "Phone: " + phone, "Email: " + (email || "-"),
+     "Message: " + (note || "-"), "", "Reply on WhatsApp: https://wa.me/" + waDigits(phone)].join("\n"));
   return json({ ok: true });
 }
 
@@ -282,14 +309,14 @@ async function admin(request, env, url) {
 
 /* ---------- router ---------- */
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
     try {
       await ensureSchema(env);
       const p = url.pathname;
-      if (p === "/api/waitlist") return await waitlist(request, env);
-      if (p === "/api/inquiries") return await createInquiry(request, env);
+      if (p === "/api/waitlist") return await waitlist(request, env, ctx);
+      if (p === "/api/inquiries") return await createInquiry(request, env, ctx);
       if (p === "/api/ingest") return await ingest(request, env);
       const rd = p.match(/^\/api\/warehouses\/(\d+)\/readings$/);
       if (rd && request.method === "GET") return await warehouseReadings(Number(rd[1]), env);
