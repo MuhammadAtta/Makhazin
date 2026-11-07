@@ -30,6 +30,11 @@ async function call(path, method = "GET", body) {
   j.status = r.status; return j;
 }
 const ERR = { unauthorized: "Wrong password.", admin_not_configured: "ADMIN_PASSWORD is not set on the server yet.", name_required: "Name is required.", city_required: "City is required.", invalid_number: "Size, price and height must be numbers.", image_must_be_https: "Photo link must start with https://", invalid_status: "Invalid status.", warehouse_not_found: "Warehouse not found." };
+function waLink(phone, text) {
+  let d = String(phone || "").replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2); else if (d.startsWith("0")) d = "20" + d.slice(1);
+  return "https://wa.me/" + d + (text ? "?text=" + encodeURIComponent(text) : "");
+}
 const errText = j => ERR[j.error] || "Something went wrong (" + (j.error || j.status) + ").";
 
 function login(note) {
@@ -226,7 +231,9 @@ async function inquiriesView() {
       $("b", { text: i.name }), $("span", { class: "small", text: "  ·  " + i.created_at + " UTC" }),
       $("div", { class: "small", text: "Warehouse: " + (i.warehouse_name || "#" + i.warehouse_id) }),
       $("div", {}, $("a", { href: "tel:" + i.phone, text: i.phone }), i.email ? " · " : "", i.email ? $("a", { href: "mailto:" + i.email, text: i.email }) : null),
-      i.message ? $("div", { class: "small", text: i.message }) : null))));
+      i.message ? $("div", { class: "small", text: i.message }) : null),
+    $("div", { class: "actions" }, $("a", { class: "btn btn-sm", target: "_blank", rel: "noopener",
+      href: waLink(i.phone, "أهلاً " + i.name + "، معاك فريق مخازن بخصوص طلبك لمعاينة " + (i.warehouse_name || "المخزن") + "."), text: "Reply on WhatsApp" })))));
   return box;
 }
 
@@ -236,8 +243,8 @@ async function waitlistView() {
   if (!j.ok) return $("p", { class: "msg err", text: errText(j) });
   const box = $("div", { class: "card pad" }, $("p", { class: "small", text: j.waitlist.length + " signups" }));
   j.waitlist.forEach(r => box.append($("div", { class: "row" },
-    $("div", {}, $("b", { text: r.email }), $("div", { class: "small", text: [r.role, r.name, r.phone, r.city].filter(Boolean).join(" · ") })),
-    $("div", { class: "small", text: r.created_at }))));
+    $("div", {}, $("b", { text: r.email }), $("div", { class: "small", text: [r.role, r.name, r.phone, r.city].filter(Boolean).join(" · ") }), $("div", { class: "small", text: r.created_at })),
+    r.phone ? $("div", { class: "actions" }, $("a", { class: "btn btn-sm", target: "_blank", rel: "noopener", href: waLink(r.phone, "أهلاً " + (r.name || "") + "، معاك فريق مخازن، شكراً لتسجيلك في قائمة الانتظار."), text: "WhatsApp" })) : null)));
   return box;
 }
 
