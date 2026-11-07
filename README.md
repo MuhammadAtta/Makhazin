@@ -1,35 +1,41 @@
-# Makhazin - Web3 Logistics Infrastructure (Repo Skeleton)
+# Makhazin
 
-This repository is a ready-to-use skeleton for **Makhazin** — an on-demand warehousing platform powered by **Hedera** and **IoT**.
+Warehouse marketplace for Egypt and the MENA region: verified listings, digital contracts with an audit trail, and live IoT monitoring (temperature, humidity, access).
 
-## Repo layout (preview)
-- /backend
-  - /auth-service
-  - /marketplace-service
-  - /booking-service
-  - /hedera-integration
-- /frontend
-  - /web (Next.js)
-  - /mobile (Flutter)
-- /iot
-  - /firmware (ESP32 samples)
-- /infrastructure
-- /docs (pitch deck, submission, demo scripts)
+This repository contains the market-validation landing page and its waitlist backend.
 
-## Quick start (local demo)
-1. Clone this repo to your machine.
-2. Install Java 17, Maven, Node.js, Flutter (for mobile), Docker.
-3. Setup `.env` files according to each service `/backend/*/.env.example`.
-4. For Hedera development, use Hedera Testnet: create accounts at https://portal.hedera.com and store your operator ID and keys in the hedera integration service.
+## Stack
+- **Frontend:** a single static page, `public/index.html` (no build step)
+- **Backend:** one Cloudflare Worker, `src/worker.js`, exposing `POST /api/waitlist`
+- **Database:** Cloudflare D1 (`makhazin-waitlist`), schema in `schema.sql`
+- **Deploy:** GitHub Actions on every push to `main` (`.github/workflows/deploy.yml`)
 
-## What I delivered
-- Project skeleton files and guides to run Hedera testnet locally.
-- Smart contract template (Solidity) for rental agreements.
-- Java Hedera integration skeleton (sample code).
-- Pitch deck (markdown) + submission template.
-- Recruitment job posting for Blockchain Developer.
+## Waitlist API
+`POST /api/waitlist` with JSON:
 
-## Next actions
-- Push this repo to GitHub under `github.com/MuhammadAtta/makhazin` (or your preferred org).
-- Invite contributors and start implementing MVP features.
+| Field | Required | Notes |
+|---|---|---|
+| `email` | yes | validated, stored lowercase |
+| `role` | yes | `owner` or `tenant` |
+| `name`, `phone`, `city` | no | trimmed and length-limited |
+| `website` | no | honeypot field, must stay empty |
 
+Submitting the same email again updates the existing row instead of creating a duplicate.
+
+## Read the signups
+Cloudflare dashboard → Storage & databases → D1 → `makhazin-waitlist` → Console:
+
+```sql
+SELECT email, role, name, phone, city, created_at FROM waitlist ORDER BY id DESC;
+```
+
+## Deploy
+Push to `main`. The workflow needs two repository secrets (Settings → Secrets and variables → Actions):
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+Never commit tokens to the repository.
+
+## Notes
+- The sensor readout on the landing page is simulated and labelled as such.
+- `pitch-deck.md`, `recruitment_job_posting.md` and `submission.md` are earlier planning documents from a previous direction. They are kept for reference only and do not describe the current product.
