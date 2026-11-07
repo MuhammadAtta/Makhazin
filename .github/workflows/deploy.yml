@@ -17,5 +17,9 @@ jobs:
           command: deploy
           secrets: |
             ADMIN_PASSWORD
+            RESEND_API_KEY
+            NOTIFY_EMAIL
         env:
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
