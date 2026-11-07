@@ -31,6 +31,15 @@ function ensureSchema(env) {
         id INTEGER PRIMARY KEY AUTOINCREMENT, warehouse_id INTEGER NOT NULL,
         name TEXT NOT NULL, phone TEXT NOT NULL, email TEXT NOT NULL DEFAULT '', message TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (datetime('now')))`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS devices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, warehouse_id INTEGER NOT NULL, name TEXT NOT NULL DEFAULT '',
+        key_hash TEXT NOT NULL UNIQUE, last_seen TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')))`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS readings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, device_id INTEGER NOT NULL, warehouse_id INTEGER NOT NULL,
+        temp_c REAL NOT NULL, humidity REAL NOT NULL, door_open INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')))`),
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_readings_wh_time ON readings (warehouse_id, created_at)"),
     ]).catch((e) => { schemaReady = null; throw e; });
   }
   return schemaReady;
@@ -111,6 +120,57 @@ async function createInquiry(request, env) {
   return json({ ok: true });
 }
 
+/* ---------- IoT: device ingestion + public readings ---------- */
+const hex = (bytes) => [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+
+async function ingest(request, env) {
+  if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
+  const key = request.headers.get("x-device-key") || "";
+  if (key.length < 16 || key.length > 128) return json({ ok: false, error: "unauthorized" }, 401);
+  const dev = await env.DB.prepare("SELECT id, warehouse_id, last_seen FROM devices WHERE key_hash = ?")
+    .bind(hex(await sha256(key))).first();
+  if (!dev) return json({ ok: false, error: "unauthorized" }, 401);
+
+  let d;
+  try { d = await request.json(); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
+  const t = Number(d.temp_c), h = Number(d.humidity);
+  if (!Number.isFinite(t) || !Number.isFinite(h) || t < -40 || t > 85 || h < 0 || h > 100) {
+    return json({ ok: false, error: "invalid_reading" }, 400);
+  }
+  const door = d.door_open === true || d.door_open === 1 ? 1 : d.door_open === false || d.door_open === 0 ? 0 : null;
+
+  if (dev.last_seen && Date.now() - Date.parse(dev.last_seen.replace(" ", "T") + "Z") < 15000) {
+    return json({ ok: false, error: "too_frequent" }, 429);
+  }
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO readings (device_id, warehouse_id, temp_c, humidity, door_open) VALUES (?1,?2,?3,?4,?5)")
+      .bind(dev.id, dev.warehouse_id, Math.round(t * 10) / 10, Math.round(h * 10) / 10, door),
+    env.DB.prepare("UPDATE devices SET last_seen = datetime('now') WHERE id = ?").bind(dev.id),
+  ]);
+  if (Math.random() < 0.02) { // occasional cleanup: keep 30 days
+    await env.DB.prepare("DELETE FROM readings WHERE created_at < datetime('now','-30 days')").run();
+  }
+  return json({ ok: true });
+}
+
+async function warehouseReadings(id, env) {
+  const exists = await env.DB.prepare("SELECT 1 AS x FROM warehouses WHERE id = ? AND status != 'hidden'").bind(id).first();
+  if (!exists) return json({ ok: false, error: "not_found" }, 404);
+  const latest = await env.DB.prepare(
+    `SELECT temp_c, humidity, door_open, created_at,
+            CAST(strftime('%s','now') AS INTEGER) - CAST(strftime('%s', created_at) AS INTEGER) AS age_s
+     FROM readings WHERE warehouse_id = ? ORDER BY created_at DESC, id DESC LIMIT 1`
+  ).bind(id).first();
+  if (!latest) return json({ ok: true, latest: null, series: [] });
+  const { results } = await env.DB.prepare(
+    `SELECT strftime('%Y-%m-%d %H:', created_at) || printf('%02d', (CAST(strftime('%M', created_at) AS INTEGER) / 15) * 15) AS t,
+            ROUND(AVG(temp_c), 1) AS temp_c, ROUND(AVG(humidity), 1) AS humidity
+     FROM readings WHERE warehouse_id = ? AND created_at >= datetime('now','-24 hours')
+     GROUP BY t ORDER BY t`
+  ).bind(id).all();
+  return json({ ok: true, latest: { ...latest, online: latest.age_s < 300 }, series: results });
+}
+
 /* ---------- admin ---------- */
 function parseWarehouse(d) {
   const w = {
@@ -165,7 +225,42 @@ async function admin(request, env, url) {
       return json({ ok: true });
     }
     if (request.method === "DELETE" && id) {
-      await env.DB.prepare("DELETE FROM warehouses WHERE id = ?").bind(id).run();
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM readings WHERE warehouse_id = ?").bind(id),
+        env.DB.prepare("DELETE FROM devices WHERE warehouse_id = ?").bind(id),
+        env.DB.prepare("DELETE FROM warehouses WHERE id = ?").bind(id),
+      ]);
+      return json({ ok: true });
+    }
+    return json({ ok: false, error: "method_not_allowed" }, 405);
+  }
+
+  const dm = path.match(/^devices(?:\/(\d+))?$/);
+  if (dm) {
+    const did = dm[1] ? Number(dm[1]) : null;
+    if (request.method === "GET" && !did) {
+      const { results } = await env.DB.prepare(
+        `SELECT d.id, d.name, d.warehouse_id, w.name AS warehouse_name, d.last_seen, d.created_at
+         FROM devices d LEFT JOIN warehouses w ON w.id = d.warehouse_id ORDER BY d.id DESC`
+      ).all();
+      return json({ ok: true, devices: results });
+    }
+    if (request.method === "POST" && !did) {
+      let d; try { d = await request.json(); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
+      const wid = toInt(d.warehouse_id);
+      const ok = Number.isInteger(wid) && (await env.DB.prepare("SELECT 1 AS x FROM warehouses WHERE id = ?").bind(wid).first());
+      if (!ok) return json({ ok: false, error: "warehouse_not_found" }, 400);
+      const raw = crypto.getRandomValues(new Uint8Array(24));
+      const key = "mk_" + hex(raw); // shown once; only its hash is stored
+      const r = await env.DB.prepare("INSERT INTO devices (warehouse_id, name, key_hash) VALUES (?1,?2,?3)")
+        .bind(wid, clean(d.name, 80), hex(await sha256(key))).run();
+      return json({ ok: true, id: r.meta?.last_row_id ?? null, key }, 201);
+    }
+    if (request.method === "DELETE" && did) {
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM readings WHERE device_id = ?").bind(did),
+        env.DB.prepare("DELETE FROM devices WHERE id = ?").bind(did),
+      ]);
       return json({ ok: true });
     }
     return json({ ok: false, error: "method_not_allowed" }, 405);
@@ -195,6 +290,9 @@ export default {
       const p = url.pathname;
       if (p === "/api/waitlist") return await waitlist(request, env);
       if (p === "/api/inquiries") return await createInquiry(request, env);
+      if (p === "/api/ingest") return await ingest(request, env);
+      const rd = p.match(/^\/api\/warehouses\/(\d+)\/readings$/);
+      if (rd && request.method === "GET") return await warehouseReadings(Number(rd[1]), env);
       if (p === "/api/warehouses" && request.method === "GET") return await listWarehouses(url, env);
       const one = p.match(/^\/api\/warehouses\/(\d+)$/);
       if (one && request.method === "GET") return await getWarehouse(Number(one[1]), env);
