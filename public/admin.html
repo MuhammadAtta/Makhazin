@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Makhazin</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<nav><div class="wrap"><a class="logo" href="/">Makhazin</a><div class="navlinks"><a class="plain" href="/warehouses">View site</a><button class="btn btn-ghost btn-sm" id="logout" hidden>Log out</button></div></div></nav>
+<main class="wrap page" id="app"></main>
+
+<script>
+let pw = "";
+try { pw = sessionStorage.getItem("mk_admin") || ""; } catch {}
+const app = document.getElementById("app"), logoutBtn = document.getElementById("logout");
+const $ = (t, props = {}, ...kids) => {
+  const e = document.createElement(t);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => c != null && e.append(c));
+  return e;
+};
+async function call(path, method = "GET", body) {
+  const r = await fetch("/api/admin/" + path, { method, headers: { "x-admin-password": pw, ...(body ? { "content-type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({ ok: false, error: "bad_response" }));
+  j.status = r.status; return j;
+}
+const ERR = { unauthorized: "Wrong password.", admin_not_configured: "ADMIN_PASSWORD is not set on the server yet.", name_required: "Name is required.", city_required: "City is required.", invalid_number: "Size, price and height must be numbers.", image_must_be_https: "Photo link must start with https://", invalid_status: "Invalid status." };
+const errText = j => ERR[j.error] || "Something went wrong (" + (j.error || j.status) + ").";
+
+function login(note) {
+  logoutBtn.hidden = true;
+  const input = $("input", { type: "password", id: "pw", autocomplete: "current-password" });
+  const msg = $("div", { class: "msg err", text: note || "" });
+  const form = $("form", { class: "card pad", style: "max-width:420px" },
+    $("h1", { text: "Admin" }),
+    $("div", { class: "field" }, $("label", { class: "f", for: "pw", text: "Password" }), input),
+    $("button", { class: "btn", type: "submit", text: "Log in" }), msg);
+  form.addEventListener("submit", async e => {
+    e.preventDefault(); pw = input.value;
+    const j = await call("ping");
+    if (j.ok) { try { sessionStorage.setItem("mk_admin", pw); } catch {} start(); }
+    else { msg.textContent = errText(j); }
+  });
+  app.replaceChildren(form);
+}
+logoutBtn.addEventListener("click", () => { pw = ""; try { sessionStorage.removeItem("mk_admin"); } catch {} login(); });
+
+let tab = "warehouses", editing = null, cache = [];
+async function start() {
+  const j = await call("ping");
+  if (!j.ok) return login(pw ? errText(j) : "");
+  logoutBtn.hidden = false;
+  render();
+}
+
+function tabs() {
+  return $("div", { class: "tabs" }, [["warehouses", "Warehouses"], ["inquiries", "Viewing requests"], ["waitlist", "Waitlist"]].map(([k, l]) =>
+    $("button", { class: "tab" + (tab === k ? " on" : ""), text: l, onclick: () => { tab = k; editing = null; render(); } })));
+}
+
+async function render() {
+  app.replaceChildren($("h1", { text: "Admin" }), tabs(), $("p", { class: "small", text: "Loading…" }));
+  const body = tab === "warehouses" ? await warehousesView() : tab === "inquiries" ? await inquiriesView() : await waitlistView();
+  app.replaceChildren($("h1", { text: "Admin" }), tabs(), body);
+}
+
+/* ----- warehouses ----- */
+const FIELDS = [
+  ["name", "Name *", "text"], ["city", "City *", "text"], ["area", "Area / district", "text"],
+  ["size_sqm", "Size (m²)", "number"], ["price_egp_month", "Price (EGP / month)", "number"], ["clear_height_m", "Clear height (m)", "number"],
+  ["features", "Features (comma separated, e.g. Loading dock, Cold storage, 24/7 security)", "text"],
+  ["image_url", "Photo link (https://…)", "url"],
+];
+
+async function warehousesView() {
+  const j = await call("warehouses");
+  if (!j.ok) return $("p", { class: "msg err", text: errText(j) });
+  cache = j.warehouses;
+  const wrap = $("div");
+  wrap.append(formView(), $("h2", { text: "All warehouses (" + cache.length + ")", style: "margin-top:28px" }));
+  const list = $("div", { class: "card pad" });
+  if (!cache.length) list.append($("p", { class: "small", text: "No warehouses yet. Add the first one above." }));
+  cache.forEach(w => list.append($("div", { class: "row" },
+    $("div", {},
+      $("b", { text: w.name }),
+      $("div", { class: "small", text: [w.area, w.city].filter(Boolean).join(", ") + (w.size_sqm ? " · " + w.size_sqm + " m²" : "") + (w.price_egp_month != null ? " · " + w.price_egp_month + " EGP" : "") }),
+      $("div", { class: "small", text: "Status: " + w.status })),
+    $("div", { class: "actions" },
+      $("button", { class: "btn btn-ghost btn-sm", text: "Edit", onclick: () => { editing = w; render().then(() => scrollTo({ top: 0, behavior: "smooth" })); } }),
+      $("button", { class: "btn btn-ghost btn-sm", text: w.status === "available" ? "Mark rented" : "Mark available", onclick: () => setStatus(w, w.status === "available" ? "rented" : "available") }),
+      $("button", { class: "btn btn-ghost btn-sm", text: w.status === "hidden" ? "Show" : "Hide", onclick: () => setStatus(w, w.status === "hidden" ? "available" : "hidden") }),
+      $("button", { class: "btn btn-danger btn-sm", text: "Delete", onclick: () => del(w) })))));
+  wrap.append(list);
+  return wrap;
+}
+
+async function setStatus(w, status) {
+  const j = await call("warehouses/" + w.id, "PUT", { ...w, status });
+  if (!j.ok) alert(errText(j)); render();
+}
+async function del(w) {
+  if (!confirm("Delete \"" + w.name + "\" permanently?")) return;
+  const j = await call("warehouses/" + w.id, "DELETE");
+  if (!j.ok) alert(errText(j)); render();
+}
+
+function formView() {
+  const w = editing || {};
+  const inputs = {};
+  const form = $("form", { class: "card pad", novalidate: "" }, $("h2", { text: editing ? "Edit warehouse" : "Add a warehouse" }));
+  FIELDS.forEach(([k, label, type]) => {
+    const inp = $("input", { id: "w-" + k, type, ...(type === "number" ? { inputmode: "decimal", step: "any" } : {}) });
+    inp.value = w[k] ?? ""; inputs[k] = inp;
+    form.append($("div", { class: "field" }, $("label", { class: "f", for: "w-" + k, text: label }), inp));
+  });
+  const desc = $("textarea", { id: "w-description" }); desc.value = w.description || "";
+  const status = $("select", { id: "w-status" }, ["available", "rented", "hidden"].map(s => $("option", { value: s, text: s })));
+  status.value = w.status || "available";
+  const msg = $("div", { class: "msg" });
+  form.append(
+    $("div", { class: "field" }, $("label", { class: "f", for: "w-description", text: "Description" }), desc),
+    $("div", { class: "field" }, $("label", { class: "f", for: "w-status", text: "Status (hidden = not shown on the site)" }), status),
+    $("button", { class: "btn", type: "submit", text: editing ? "Save changes" : "Add warehouse" }),
+    ...(editing ? [$("button", { class: "btn btn-ghost", type: "button", style: "margin-inline-start:8px", text: "Cancel", onclick: () => { editing = null; render(); } })] : []),
+    msg);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const body = { description: desc.value, status: status.value };
+    FIELDS.forEach(([k]) => body[k] = inputs[k].value);
+    msg.className = "msg"; msg.textContent = "Saving…";
+    const j = editing ? await call("warehouses/" + editing.id, "PUT", body) : await call("warehouses", "POST", body);
+    if (j.ok) { editing = null; render(); } else { msg.className = "msg err"; msg.textContent = errText(j); }
+  });
+  return form;
+}
+
+/* ----- inquiries ----- */
+async function inquiriesView() {
+  const j = await call("inquiries");
+  if (!j.ok) return $("p", { class: "msg err", text: errText(j) });
+  const box = $("div", { class: "card pad" });
+  if (!j.inquiries.length) box.append($("p", { class: "small", text: "No viewing requests yet." }));
+  j.inquiries.forEach(i => box.append($("div", { class: "row" },
+    $("div", {},
+      $("b", { text: i.name }), $("span", { class: "small", text: "  ·  " + i.created_at + " UTC" }),
+      $("div", { class: "small", text: "Warehouse: " + (i.warehouse_name || "#" + i.warehouse_id) }),
+      $("div", {}, $("a", { href: "tel:" + i.phone, text: i.phone }), i.email ? " · " : "", i.email ? $("a", { href: "mailto:" + i.email, text: i.email }) : null),
+      i.message ? $("div", { class: "small", text: i.message }) : null))));
+  return box;
+}
+
+/* ----- waitlist ----- */
+async function waitlistView() {
+  const j = await call("waitlist");
+  if (!j.ok) return $("p", { class: "msg err", text: errText(j) });
+  const box = $("div", { class: "card pad" }, $("p", { class: "small", text: j.waitlist.length + " signups" }));
+  j.waitlist.forEach(r => box.append($("div", { class: "row" },
+    $("div", {}, $("b", { text: r.email }), $("div", { class: "small", text: [r.role, r.name, r.phone, r.city].filter(Boolean).join(" · ") })),
+    $("div", { class: "small", text: r.created_at }))));
+  return box;
+}
+
+start();
+</script>
+</body>
+</html>
