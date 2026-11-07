@@ -88,6 +88,42 @@ async function showList() {
   load();
 }
 
+/* ---------- live conditions (IoT) ---------- */
+const NS = "http://www.w3.org/2000/svg";
+function spark(series) {
+  if (!series || series.length < 2) return null;
+  const vals = series.map(p => p.temp_c), lo = Math.min(...vals) - 0.5, hi = Math.max(...vals) + 0.5;
+  const pts = vals.map((v, i) => (i * 300 / (vals.length - 1)).toFixed(1) + "," + (56 - (v - lo) / (hi - lo) * 52).toFixed(1)).join(" ");
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 300 60"); svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("style", "width:100%;height:60px;display:block"); svg.setAttribute("aria-label", "Temperature, last 24 hours");
+  const line = document.createElementNS(NS, "polyline");
+  line.setAttribute("points", pts); line.setAttribute("fill", "none"); line.setAttribute("stroke", "#12a4a8");
+  line.setAttribute("stroke-width", "2"); line.setAttribute("stroke-linejoin", "round");
+  svg.append(line);
+  return $("div", {}, svg, $("div", { class: "small", text: "Temperature, last 24 hours (" + Math.min(...vals).toFixed(1) + "–" + Math.max(...vals).toFixed(1) + " °C)" }));
+}
+const ago = s => s < 90 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 172800 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
+const factBox = (k, v) => $("div", { class: "fact" }, $("small", { text: k }), $("b", { text: v }));
+
+function liveCard(id) {
+  const box = $("div", { class: "card pad", style: "margin-top:18px", hidden: "" });
+  api("/api/warehouses/" + id + "/readings").then(out => {
+    if (!out.ok || !out.latest) return;
+    const l = out.latest;
+    box.append($("h2", { text: "Live conditions" }),
+      $("div", { class: "facts" },
+        factBox("Temperature", l.temp_c.toFixed(1) + " °C"),
+        factBox("Humidity", Math.round(l.humidity) + " %"),
+        l.door_open == null ? null : factBox("Door", l.door_open ? "Open" : "Closed"),
+        factBox("Sensor", l.online ? "Online" : "Offline")),
+      spark(out.series),
+      $("div", { class: "small", style: "margin-top:8px", text: "Last reading " + ago(l.age_s) }));
+    box.hidden = false;
+  });
+  return box;
+}
+
 /* ---------- detail ---------- */
 async function showDetail(id) {
   app.replaceChildren($("p", { class: "empty", text: "Loading…" }));
@@ -137,7 +173,7 @@ async function showDetail(id) {
     else { msg.className = "msg err"; msg.textContent = "Could not send. Please check your details and try again."; }
   });
 
-  app.replaceChildren($("a", { class: "back", href: "/warehouses", text: "← All warehouses" }), $("div", { class: "detail" }, info, form));
+  app.replaceChildren($("a", { class: "back", href: "/warehouses", text: "← All warehouses" }), $("div", { class: "detail" }, $("div", {}, info, liveCard(w.id)), form));
 }
 
 const id = new URLSearchParams(location.search).get("id");

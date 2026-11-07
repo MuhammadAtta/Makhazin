@@ -29,7 +29,7 @@ async function call(path, method = "GET", body) {
   const j = await r.json().catch(() => ({ ok: false, error: "bad_response" }));
   j.status = r.status; return j;
 }
-const ERR = { unauthorized: "Wrong password.", admin_not_configured: "ADMIN_PASSWORD is not set on the server yet.", name_required: "Name is required.", city_required: "City is required.", invalid_number: "Size, price and height must be numbers.", image_must_be_https: "Photo link must start with https://", invalid_status: "Invalid status." };
+const ERR = { unauthorized: "Wrong password.", admin_not_configured: "ADMIN_PASSWORD is not set on the server yet.", name_required: "Name is required.", city_required: "City is required.", invalid_number: "Size, price and height must be numbers.", image_must_be_https: "Photo link must start with https://", invalid_status: "Invalid status.", warehouse_not_found: "Warehouse not found." };
 const errText = j => ERR[j.error] || "Something went wrong (" + (j.error || j.status) + ").";
 
 function login(note) {
@@ -59,13 +59,13 @@ async function start() {
 }
 
 function tabs() {
-  return $("div", { class: "tabs" }, [["warehouses", "Warehouses"], ["inquiries", "Viewing requests"], ["waitlist", "Waitlist"]].map(([k, l]) =>
+  return $("div", { class: "tabs" }, [["warehouses", "Warehouses"], ["devices", "Devices"], ["inquiries", "Viewing requests"], ["waitlist", "Waitlist"]].map(([k, l]) =>
     $("button", { class: "tab" + (tab === k ? " on" : ""), text: l, onclick: () => { tab = k; editing = null; render(); } })));
 }
 
 async function render() {
   app.replaceChildren($("h1", { text: "Admin" }), tabs(), $("p", { class: "small", text: "Loading…" }));
-  const body = tab === "warehouses" ? await warehousesView() : tab === "inquiries" ? await inquiriesView() : await waitlistView();
+  const body = tab === "warehouses" ? await warehousesView() : tab === "devices" ? await devicesView() : tab === "inquiries" ? await inquiriesView() : await waitlistView();
   app.replaceChildren($("h1", { text: "Admin" }), tabs(), body);
 }
 
@@ -137,6 +137,55 @@ function formView() {
     if (j.ok) { editing = null; render(); } else { msg.className = "msg err"; msg.textContent = errText(j); }
   });
   return form;
+}
+
+/* ----- devices (ESP32 sensors) ----- */
+let newKey = null;
+async function devicesView() {
+  const [dj, wj] = await Promise.all([call("devices"), call("warehouses")]);
+  if (!dj.ok) return $("p", { class: "msg err", text: errText(dj) });
+  const wrap = $("div");
+
+  const sel = $("select", { id: "d-wh" }, (wj.warehouses || []).map(w => $("option", { value: w.id, text: w.name + " — " + w.city })));
+  const name = $("input", { id: "d-name", placeholder: "e.g. Sensor 1 (back wall)" });
+  const msg = $("div", { class: "msg" });
+  const form = $("form", { class: "card pad", novalidate: "" },
+    $("h2", { text: "Register a sensor" }),
+    $("p", { class: "small", text: "Each ESP32 gets its own key. The key is shown once, right after you create it." }),
+    $("div", { class: "field", style: "margin-top:12px" }, $("label", { class: "f", for: "d-wh", text: "Warehouse" }), sel),
+    $("div", { class: "field" }, $("label", { class: "f", for: "d-name", text: "Name (optional)" }), name),
+    $("button", { class: "btn", type: "submit", text: "Create sensor key" }), msg);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!sel.value) { msg.className = "msg err"; msg.textContent = "Add a warehouse first."; return; }
+    const j = await call("devices", "POST", { warehouse_id: sel.value, name: name.value });
+    if (j.ok) { newKey = j.key; render(); } else { msg.className = "msg err"; msg.textContent = errText(j); }
+  });
+  wrap.append(form);
+
+  if (newKey) {
+    const keyBox = $("div", { class: "card pad", style: "margin-top:18px;border-color:var(--teal-500)" },
+      $("h2", { text: "Copy this key now" }),
+      $("p", { class: "small", text: "It will not be shown again. Paste it into the ESP32 sketch as DEVICE_KEY." }),
+      $("input", { readonly: "", value: newKey, style: "margin-top:10px;font-family:monospace", onfocus: ev => ev.target.select() }),
+      $("div", { class: "actions", style: "margin-top:10px;display:flex;gap:8px" },
+        $("button", { class: "btn btn-sm", type: "button", text: "Copy", onclick: async ev => { try { await navigator.clipboard.writeText(newKey); ev.target.textContent = "Copied"; } catch { ev.target.textContent = "Select and copy manually"; } } }),
+        $("button", { class: "btn btn-ghost btn-sm", type: "button", text: "I saved it", onclick: () => { newKey = null; render(); } })));
+    wrap.append(keyBox);
+  }
+
+  wrap.append($("h2", { text: "Sensors (" + dj.devices.length + ")", style: "margin-top:28px" }));
+  const list = $("div", { class: "card pad" });
+  if (!dj.devices.length) list.append($("p", { class: "small", text: "No sensors registered yet." }));
+  dj.devices.forEach(d => list.append($("div", { class: "row" },
+    $("div", {}, $("b", { text: d.name || "Sensor #" + d.id }),
+      $("div", { class: "small", text: "Warehouse: " + (d.warehouse_name || "#" + d.warehouse_id) }),
+      $("div", { class: "small", text: d.last_seen ? "Last seen " + d.last_seen + " UTC" : "Never connected" })),
+    $("div", { class: "actions" }, $("button", { class: "btn btn-danger btn-sm", text: "Delete", onclick: async () => {
+      if (!confirm("Delete this sensor and all its readings?")) return;
+      const j = await call("devices/" + d.id, "DELETE"); if (!j.ok) alert(errText(j)); render(); } })))));
+  wrap.append(list);
+  return wrap;
 }
 
 /* ----- inquiries ----- */
